@@ -1,7 +1,6 @@
 import React from 'react';
 import Message from 'components/Message';
 import Featured from 'components/Featured';
-import TronLinkGuide from 'components/TronLinkGuide';
 import TronWeb from 'tronweb';
 import Utils from 'utils';
 import Swal from 'sweetalert2';
@@ -125,60 +124,6 @@ class App extends React.Component {
             console.log('Detected new message:', result.id);
             this.fetchMessage(+result.id);
         });
-
-        /*Utils.contract.MessageTipped().watch((err, { result }) => {
-            if(err)
-                return console.error('Failed to bind event listener:', err);
-
-            console.log('Message was tipped:', result.id);
-            this.fetchMessage(+result.id);
-        });
-
-        Utils.contract.MessageAddedToTopPosts().watch((err, { result }) => {
-            if(err)
-                return console.error('Failed to bind event listener:', err);
-
-            console.log('Message was added to featured posts:', result.id);
-            this.fetchMessage(+result.id);
-
-            const {
-                recent,
-                featured
-            } = this.state.messages;
-
-            if(featured.includes(+result.id))
-                return;
-
-            this.setState({
-                messages: {
-                    recent: this.state.messages.recent,
-                    featured: [ ...featured, +result.id ]
-                }
-            });
-        });
-
-        Utils.contract.MessageRemovedFromTopPosts().watch((err, { result }) => {
-            if(err)
-                return console.error('Failed to bind event listener:', err);
-
-            console.log('Message was removed from featured posts:', result.id);
-            this.fetchMessage(+result.id);
-
-            const {
-                recent,
-                featured
-            } = this.state.messages;
-
-            if(!featured.includes(+result.id))
-                return;
-
-            this.setState({
-                messages: {
-                    recent: this.state.messages.recent,
-                    featured: featured.filter(messageID => messageID !== +result.id)
-                }
-            });
-        });*/
     }
 
     async fetchMessages() {
@@ -304,10 +249,11 @@ class App extends React.Component {
 
     renderMessageInput() {
         if(!this.state.tronWeb.installed)
-            return <TronLinkGuide />;
+            return <div>TronLink is not installed yet.</div>;
 
         if(!this.state.tronWeb.loggedIn)
-            return <TronLinkGuide installed />;
+            return <div>TronLink is installed but you must first log in. Open TronLink from the browser bar and set up your
+              first wallet or decrypt a previously-created wallet.</div>;
 
         return (
             <div className={ 'messageInput' + (this.state.currentMessage.loading ? ' loading' : '') }>
