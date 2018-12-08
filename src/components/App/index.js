@@ -4,7 +4,6 @@ import Featured from 'components/Featured';
 import TronWeb from 'tronweb';
 import Utils from 'utils';
 import Swal from 'sweetalert2';
-import banner from 'assets/banner.png';
 
 import './App.scss';
 
@@ -295,21 +294,6 @@ class App extends React.Component {
 
         return (
             <div className='kontainer'>
-                <div className='header white'>
-                    <a href='https://tronwatch.market' target='_blank' rel='noopener noreferrer'>
-                        <img className='banner' src={ banner } alt='TronWatch Market ICO' />
-                    </a>
-                    <p>
-                        <strong>Tron Message Board</strong> is a DApp which allows you to post messages
-                        along with tipping others or receiving tips. There is no additional cost associated
-                        when tipping people, however you do have to pay network fees.<br/><br/>
-
-                        Want to build your own DApp? The code to this demo is available on&nbsp;
-                        <a href='https://github.com/TronWatch/TronLink-Demo-Messages/' target='_blank' rel='noopener noreferrer'>
-                            GitHub
-                        </a>.
-                    </p>
-                </div>
 
                 { this.renderMessageInput() }
 
