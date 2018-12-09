@@ -1,6 +1,5 @@
 import React from 'react';
-import Message from 'components/Message';
-import Featured from 'components/Featured';
+import Poll from 'components/Poll';
 import TronWeb from 'tronweb';
 import Utils from 'utils';
 import Swal from 'sweetalert2';
@@ -15,22 +14,22 @@ class App extends React.Component {
             installed: false,
             loggedIn: false
         },
-        currentMessage: {
-            message: '',
-            loading: false
+        myPoll: {
+          facePhoto: '',
+          faceHash: '',
+          blocksBeforeReveal: 10, // 30 seconds
+          blocksBeforeEnd: 10, // 30 seconds
+          loading : false
         },
-        messages: {
-            recent: {},
-            featured: []
-        }
+        recentPolls: []
     }
 
     constructor(props) {
         super(props);
 
-        this.onMessageEdit = this.onMessageEdit.bind(this);
-        this.onMessageSend = this.onMessageSend.bind(this);
-        this.onMessageTip = this.onMessageTip.bind(this);
+        this.changeFacePhoto = this.changeFacePhoto.bind(this);
+        this.startFacePoll = this.startFacePoll.bind(this);
+        this.onScore = this.onScore.bind(this);
     }
 
     async componentDidMount() {
@@ -53,7 +52,7 @@ class App extends React.Component {
 
             const timer = setInterval(() => {
                 if(tries >= 10) {
-                    const TRONGRID_API = 'https://api.trongrid.io';
+                    const TRONGRID_API = 'https://api.shasta.trongrid.io';
 
                     window.tronWeb = new TronWeb(
                         TRONGRID_API,
@@ -111,142 +110,82 @@ class App extends React.Component {
         Utils.setTronWeb(window.tronWeb);
 
         this.startEventListener();
-        this.fetchMessages();
     }
 
     // Polls blockchain for smart contract events
     startEventListener() {
-        Utils.contract.MessagePosted().watch((err, { result }) => {
+        Utils.contract.FaceWorthPollCreated().watch((err, { result }) => {
             if(err)
                 return console.error('Failed to bind event listener:', err);
 
-            console.log('Detected new message:', result.id);
-            this.fetchMessage(+result.id);
+            console.log('Detected new poll:', result);
+            // this.fetchMessage(+result.id);
         });
-    }
-
-    async fetchMessages() {
-        this.setState({
-            messages: await Utils.fetchMessages()
-        });
-    }
-
-    async fetchMessage(messageID) {
-        const {
-            recent,
-            featured,
-            message
-        } = await Utils.fetchMessage(messageID, this.state.messages);
-
-        this.setState({
-            messages: {
-                recent,
-                featured
-            }
-        });
-
-        return message;
     }
 
     // Stores value of textarea to state
-    onMessageEdit({ target: { value } }) {
-        if(this.state.currentMessage.loading)
-            return;
-
+    changeFacePhoto({ target: { value } }) {
         this.setState({
-            currentMessage: {
-                message: value,
-                loading: false
+            myPoll: {
+              facePhoto: value,
+              faceHash: value ? TronWeb.sha3(value, true) : '',
+              blocksBeforeReveal: this.state.myPoll.blocksBeforeReveal,
+              blocksBeforeEnd: this.state.myPoll.blocksBeforeEnd,
+              loading: this.state.myPoll.loading
             }
         });
     }
 
-    // Submits message to the blockchain
-    onMessageSend() {
+    async startFacePoll() {
+
+        this.setState({
+          myPoll: {
+            facePhoto: this.state.myPoll.facePhoto,
+            faceHash: this.state.myPoll.faceHash,
+            blocksBeforeReveal: this.state.myPoll.blocksBeforeReveal,
+            blocksBeforeEnd: this.state.myPoll.blocksBeforeEnd,
+            loading: true
+          }
+        });
+
         const {
-            loading,
-            message
-        } = this.state.currentMessage;
+          faceHash,
+          blocksBeforeReveal,
+          blocksBeforeEnd
+        } = this.state.myPoll;
 
-        if(loading)
-            return;
+        const stake = Utils.contract.stake().call();
 
-        if(!message.trim().length)
-            return;
-
-        this.setState({
-            currentMessage: {
-                loading: true,
-                message
-            }
-        });
-
-        Utils.contract.postMessage(message).send({
-            shouldPollResponse: true,
-            callValue: 0
-        }).then(res => Swal({
-            title: 'Post Created',
-            type: 'success'
+        Utils.contract.createFaceWorthPoll(faceHash, blocksBeforeReveal, blocksBeforeEnd).send({
+          shouldPollResponse: true,
+          callValue: stake
+        }).then(res=> Swal({
+          title: 'FacePoll created',
+          text: 'txid ' + res,
+          type: 'success'
         })).catch(err => Swal({
-            title: 'Post Failed',
-            type: 'error'
-        })).then(() => {
-            this.setState({
-                currentMessage: {
-                    loading: false,
-                    message
-                }
-            });
-        });
-    }
-
-    // Tips a message with a specific amount
-    async onMessageTip(messageID) {
-        const messages = {
-            ...this.state.messages.recent,
-            ...this.state.messages.featured
-        };
-
-        if(!messages.hasOwnProperty(messageID))
-            return;
-
-        if(!this.state.tronWeb.loggedIn)
-            return;
-
-        if(messages[messageID].owner === Utils.tronWeb.defaultAddress.base58)
-            return;
-
-        const { value } = await Swal({
-            title: 'Tip Message',
-            text: 'Enter tip amount in TRX',
-            confirmButtonText: 'Tip',
-            input: 'text',
-            showCancelButton: true,
-            showLoaderOnConfirm: true,
-            reverseButtons: true,
-            allowOutsideClick: () => !Swal.isLoading(),
-            allowEscapeKey: () => !Swal.isLoading(),
-            preConfirm: amount => {
-                if(isNaN(amount) || amount <= 0) {
-                    Swal.showValidationMessage('Invalid tip amount provided');
-                    return false;
-                }
-
-                return Utils.contract.tipMessage(+messageID).send({
-                    callValue: Number(amount) * 1000000
-                }).then(() => true).catch(err => {
-                    Swal.showValidationMessage(err);
-                });
+          title: 'FacePoll creation failed',
+          type: 'error'
+        })).then(()=> {
+          this.setState({
+            myPoll: {
+              facePhoto: this.state.myPoll.facePhoto,
+              faceHash: this.state.myPoll.faceHash,
+              blocksBeforeReveal: this.state.myPoll.blocksBeforeReveal,
+              blocksBeforeEnd: this.state.myPoll.blocksBeforeEnd,
+              loading: false
             }
-        });
+          });
+      });
 
-        value && Swal({
-            title: 'Message Tipped',
-            type: 'success'
-        });
     }
 
-    renderMessageInput() {
+  async onScore(hash, score) {
+
+  }
+
+
+  renderMyPoll() {
         if(!this.state.tronWeb.installed)
             return <div>TronLink is not installed yet.</div>;
 
@@ -255,65 +194,40 @@ class App extends React.Component {
               first wallet or decrypt a previously-created wallet.</div>;
 
         return (
-            <div className={ 'messageInput' + (this.state.currentMessage.loading ? ' loading' : '') }>
+            <div>
                 <textarea
-                    placeholder='Enter your message to post'
-                    value={ this.state.currentMessage.message }
-                    onChange={ this.onMessageEdit }></textarea>
-                <div className='footer'>
-                    <div className='warning'>
-                        Posting a message will cost 1 TRX and network fees
-                    </div>
-                    <div
-                        className={ 'sendButton' + (!!this.state.currentMessage.message.trim().length ? '' : ' disabled') }
-                        onClick={ this.onMessageSend }
-                    >
-                        Post Message
-                    </div>
-                </div>
+                    placeholder='Enter some random stuff and it will be hashed just like a photo'
+                    value={ this.state.myPoll.facePhoto } cols={80} onChange = { this.changeFacePhoto }>
+                </textarea>
+              <div><label>Face hash: </label>{ this.state.myPoll.faceHash }</div>
+                <div><label>Commit blocks</label><input type="number" value={ this.state.myPoll.blocksBeforeReveal } readOnly={true}/></div>
+              <div><label>Reveal blocks</label><input type="number" value={ this.state.myPoll.blocksBeforeEnd } readOnly={true}/></div>
+                  <button disabled={ !this.state.myPoll.facePhoto || this.state.myPoll.loading } onClick={ this.startFacePoll }>Start FacePoll</button>
             </div>
         );
     }
 
     render() {
-        const {
-            recent,
-            featured
-        } = this.state.messages;
 
-        const messages = Object.entries(recent).sort((a, b) => b[1].timestamp - a[1].timestamp).map(([ messageID, message ]) => (
-            <Message
-                message={ message }
-                featured={ featured.includes(+messageID) }
-                key={ messageID }
-                messageID={ messageID }
-                tippable={ message.owner !== Utils.tronWeb.defaultAddress.base58 }
-                requiresTronLink={ !this.state.tronWeb.installed }
-                onTip={ this.onMessageTip } />
+        const polls = this.state.recentPolls.map(recentPoll => (
+            <Poll
+                key={ recentPoll.hash }
+                hash = { recentPoll.hash }
+                creator={ recentPoll.creator }
+                startingBlock = {recentPoll.startingBlock}
+                commitEndingBlock = {recentPoll.commitEndingBlock}
+                revealEndingBlock = {recentPoll.revealEndingBlock}
+                score = {Math.floor(Math.random() * 6)}
+                onScore={ this.onScore } />
         ));
 
         return (
             <div className='kontainer'>
 
-                { this.renderMessageInput() }
+                { this.renderMyPoll() }
 
-                <div className='header'>
-                    <h1>Featured</h1>
-                    <span>The top 20 messages, sorted by the total tips</span>
-                </div>
-                <Featured
-                    recent={ recent }
-                    featured={ featured }
-                    currentAddress={ Utils.tronWeb && Utils.tronWeb.defaultAddress.base58 }
-                    tronLinkInstalled={ this.state.tronWeb.installed }
-                    onTip={ this.onMessageTip } />
-
-                <div className='header'>
-                    <h1>Recent</h1>
-                    <span>Click any message to send the user a tip</span>
-                </div>
-                <div className='messages'>
-                    { messages }
+                <div>
+                    { polls }
                 </div>
             </div>
         );
