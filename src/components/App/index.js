@@ -154,11 +154,12 @@ class App extends React.Component {
           blocksBeforeEnd
         } = this.state.myPoll;
 
-        const stake = Utils.contract.stake().call();
+        const stake = await Utils.contract.stake().call();
 
         Utils.contract.createFaceWorthPoll(faceHash, blocksBeforeReveal, blocksBeforeEnd).send({
           shouldPollResponse: true,
-          callValue: stake
+          callValue: 0,
+          feeLimit: 10000000
         }).then(res=> Swal({
           title: 'FacePoll created',
           text: 'txid ' + res,
