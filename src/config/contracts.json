@@ -1,6 +1,6 @@
 {
   "FaceToken": {
-    "address": "41b3e7d1a6015a324e9d79406306f433a22254da61",
+    "address": "4132cc349691f2f37e29c82b39e0174eef9e67f315",
     "abi": [
       {
         "constant": true,
@@ -303,7 +303,7 @@
     ]
   },
   "FaceWorthPollFactory": {
-    "address": "4196ac1bfb7d363980c3494d4f48a879d4be0cc7aa",
+    "address": "4197ee0674a64fa9740f5ccd4d107dba6260e1bdcd",
     "abi": [
       {
         "constant": true,
@@ -327,6 +327,20 @@
           {
             "name": "",
             "type": "address"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "topFaceWorthCount",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint8"
           }
         ],
         "payable": false,
@@ -406,11 +420,91 @@
       {
         "constant": true,
         "inputs": [],
+        "name": "oneFace",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "name": "polls",
+        "outputs": [
+          {
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "name": "faceHash",
+            "type": "bytes32"
+          },
+          {
+            "name": "startingBlock",
+            "type": "uint256"
+          },
+          {
+            "name": "commitEndingBlock",
+            "type": "uint256"
+          },
+          {
+            "name": "revealEndingBlock",
+            "type": "uint256"
+          },
+          {
+            "name": "currentStage",
+            "type": "uint8"
+          },
+          {
+            "name": "revealCount",
+            "type": "uint256"
+          },
+          {
+            "name": "totalWorth",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
         "name": "faceTokenRewardPool",
         "outputs": [
           {
             "name": "",
             "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "name": "topWinners",
+        "outputs": [
+          {
+            "name": "",
+            "type": "address"
           }
         ],
         "payable": false,
@@ -513,6 +607,20 @@
       {
         "constant": true,
         "inputs": [],
+        "name": "topWinnersCount",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint8"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
         "name": "newOwner",
         "outputs": [
           {
@@ -532,6 +640,25 @@
           {
             "name": "",
             "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "name": "topFaceWorth",
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32"
           }
         ],
         "payable": false,
@@ -575,6 +702,11 @@
             "indexed": true,
             "name": "creator",
             "type": "address"
+          },
+          {
+            "indexed": true,
+            "name": "faceHash",
+            "type": "bytes32"
           },
           {
             "indexed": false,
@@ -814,12 +946,7 @@
           }
         ],
         "name": "createFaceWorthPoll",
-        "outputs": [
-          {
-            "name": "",
-            "type": "bytes32"
-          }
-        ],
+        "outputs": [],
         "payable": false,
         "stateMutability": "nonpayable",
         "type": "function"
@@ -900,6 +1027,37 @@
             "type": "bytes32"
           }
         ],
+        "name": "getStatus",
+        "outputs": [
+          {
+            "name": "commitTimeLapsed_",
+            "type": "uint256"
+          },
+          {
+            "name": "revealTimeLapsed_",
+            "type": "uint256"
+          },
+          {
+            "name": "currentStage_",
+            "type": "uint8"
+          },
+          {
+            "name": "participantCount_",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "_hash",
+            "type": "bytes32"
+          }
+        ],
         "name": "getCommitTimeElapsed",
         "outputs": [
           {
@@ -957,7 +1115,7 @@
             "type": "bytes32"
           }
         ],
-        "name": "getNumberOfParticipants",
+        "name": "getParticipantCount",
         "outputs": [
           {
             "name": "",
@@ -1119,20 +1277,6 @@
         "outputs": [],
         "payable": false,
         "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "getBalance",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
         "type": "function"
       }
     ]
