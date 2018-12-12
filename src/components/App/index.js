@@ -7,7 +7,8 @@ import contracts from 'config/contracts';
 import './App.scss';
 
 const FOUNDATION_ADDRESS = 'TWiWt5SEDzaEqS6kE5gandWMNfxR2B5xzg';
-const contract = contracts['FaceWorthPollFactory'];
+const factory = contracts['FaceWorthPollFactory'];
+const token = contracts['FaceToken'];
 
 class App extends React.Component {
   state = {
@@ -24,7 +25,8 @@ class App extends React.Component {
     },
     recentPolls: [],
     balance: '',
-  }
+    currentBlock: ''
+  };
 
   constructor(props) {
     super(props);
@@ -90,7 +92,7 @@ class App extends React.Component {
     });
 
     if (!this.state.tronWeb.loggedIn) {
-      // Set default address (foundation address) used for contract calls
+      // Set default address (foundation address) used for factory calls
       // Directly overwrites the address object as TronLink disabled the
       // function call
       window.tronWeb.defaultAddress = {
@@ -111,12 +113,12 @@ class App extends React.Component {
       });
     }
 
-    this.contract = window.tronWeb.contract(contract.abi, contract.address);
+    this.contract = window.tronWeb.contract(factory.abi, factory.address);
 
     this.startEventListener();
 
     // check block number every 3 seconds. This should be done on server in prod.
-    setInterval(() => {
+    setInterval(async () => {
       console.log("Checking Block Number...");
       this.state.recentPolls.map(async (poll) => {
         await this.contract.checkBlockNumber('0x' + poll.hash).send({
@@ -124,6 +126,10 @@ class App extends React.Component {
           callValue: 0,
           feeLimit: 1000000000
         });
+      });
+      let currentBlock = await window.tronWeb.trx.getCurrentBlock();
+      this.setState({
+        currentBlock: currentBlock.block_header.raw_data.number
       });
     }, 3000);
 
@@ -133,10 +139,11 @@ class App extends React.Component {
       this.setState({
         balance: await window.tronWeb.trx.getBalance() / 1000000
       })
-    }, 1000);
+    }, 3000);
+
   }
 
-  // Polls blockchain for smart contract events
+  // Polls blockchain for smart factory events
   startEventListener() {
     this.contract.FaceWorthPollCreated().watch((err, {result}) => {
       if (err) return console.error('Failed to bind event listener:', err);
@@ -147,6 +154,21 @@ class App extends React.Component {
       this.setState({
         recentPolls: recentPolls
       });
+    });
+    this.contract.StageChange().watch(async (err, {result}) => {
+      if (err) return console.error('Failed to bind event listener:', err);
+      console.log('Detected stage change:', result);
+      if (result.newStage === 4) {
+        let winners = await this.contract.getWinners('0x' + result.hash).call();
+        for(let i=0; i<winners.length; i++) {
+          if (winners[i] === window.tronWeb.defaultAddress.hex) {
+            Swal({
+              title: 'Lucky you win!',
+              type: 'success'
+            })
+          }
+        }
+      }
     });
   }
 
@@ -189,7 +211,6 @@ class App extends React.Component {
     }).then(res => {
         Swal({
           title: 'FacePoll created',
-          text: 'txid ' + res,
           type: 'success'
         })
       }
@@ -216,20 +237,52 @@ class App extends React.Component {
   }
 
   async onCommit(hash, score) {
-    const stake = await this.contract.stake().call();
-    await this.contract.commit(hash, TronWeb.sha3('random'+ score, true)).send({
-      shouldPollResponse: false,
-      callValue: stake,
-      feeLimit: 1000000000
-    });
+    let currentStage = await this.contract.getCurrentStage('0x' + hash).call();
+    switch (currentStage) {
+      case 1:
+        const stake = await this.contract.stake().call();
+        await this.contract.commit('0x' + hash, TronWeb.sha3('random'+ score, true)).send({
+          shouldPollResponse: false,
+          callValue: stake,
+          feeLimit: 1000000000
+        });
+        break;
+      case 2:
+        alert("Commit stage passed");
+        break;
+      case 3:
+        alert("It's cancelled");
+        break;
+      case 4:
+        alert("It's ended");
+        break;
+      default:
+        break;
+    }
   }
 
   async onReveal(hash, score) {
-    await this.contract.reveal(hash, 'random', score).send({
-      shouldPollResponse: false,
-      callValue: 0,
-      feeLimit: 1000000000
-    });
+    let currentStage = await this.contract.getCurrentStage('0x' + hash).call();
+    switch (currentStage) {
+      case 1:
+        alert("Not revealing yet");
+        break;
+      case 2:
+        await this.contract.reveal('0x' + hash, 'random', score).send({
+          shouldPollResponse: false,
+          callValue: 0,
+          feeLimit: 1000000000
+        });
+        break;
+      case 3:
+        alert("It's cancelled");
+        break;
+      case 4:
+        alert("It's ended");
+        break;
+      default:
+        break;
+    }
   }
 
   renderMyPoll() {
@@ -241,21 +294,27 @@ class App extends React.Component {
         first wallet or decrypt a previously-created wallet.</div>;
 
     return (
-      <div>
-        <div>My TRON account: {this.shorten(window.tronWeb.defaultAddress.base58)}</div>
-        <div>Account Balance: <h3>{this.state.balance}</h3></div>
-        <textarea
-          placeholder='Enter some random stuff and it will be hashed just like a photo'
-          value={this.state.myPoll.facePhoto} cols={80} onChange={this.changeFacePhoto}>
-                </textarea>
-        <div><label>Face hash: </label>{this.state.myPoll.faceHash}</div>
-        <div><label>Commit blocks</label><input type="number" value={this.state.myPoll.blocksBeforeReveal}
-                                                readOnly={true}/></div>
-        <div><label>Reveal blocks</label><input type="number" value={this.state.myPoll.blocksBeforeEnd}
-                                                readOnly={true}/></div>
-        <button disabled={!this.state.myPoll.facePhoto || this.state.myPoll.loading} onClick={this.startFacePoll}>
-          Start FacePoll
-        </button>
+      <div className="kontainer">
+        <div>
+          <div>My TRON account: {this.shorten(window.tronWeb.defaultAddress.base58)}</div>
+          <div>Account Balance: <h3>{this.state.balance}</h3></div>
+          <textarea
+            placeholder='Enter some random stuff and it will be hashed just like a photo'
+            value={this.state.myPoll.facePhoto} cols={80} onChange={this.changeFacePhoto}>
+                  </textarea>
+          <div><label>Face hash: </label>{this.state.myPoll.faceHash}</div>
+          <div><label>Commit blocks</label><input type="number" value={this.state.myPoll.blocksBeforeReveal}
+                                                  readOnly={true}/></div>
+          <div><label>Reveal blocks</label><input type="number" value={this.state.myPoll.blocksBeforeEnd}
+                                                  readOnly={true}/></div>
+          <button disabled={!this.state.myPoll.facePhoto || this.state.myPoll.loading} onClick={this.startFacePoll}>
+            Start FacePoll
+          </button>
+        </div>
+        <div>
+          <div>FaceToken address: {window.tronWeb.address.fromHex(token.address)}</div>
+          <div>Current Block: <h3>{this.state.currentBlock}</h3></div>
+        </div>
       </div>
     );
   }
@@ -272,7 +331,7 @@ class App extends React.Component {
         commitEndingBlock={recentPoll.commitEndingBlock}
         revealEndingBlock={recentPoll.revealEndingBlock}
         score={recentPoll.score}
-        onScore={this.onCommit}
+        onCommit={this.onCommit}
         onReveal={this.onReveal}
         shorten={this.shorten}
       />
@@ -285,13 +344,14 @@ class App extends React.Component {
         <table>
           <thead>
           <tr>
-            <td>Hash</td>
-            <td>Creator</td>
-            <td>Face Photo</td>
-            <td>Starting Block</td>
-            <td>Commit Ending Block</td>
-            <td>Reveal Ending Block</td>
-            <td>Actions</td>
+            <th>Hash</th>
+            <th>Creator</th>
+            <th>Face Photo</th>
+            <th>Starting Block</th>
+            <th>Commit Ending Block</th>
+            <th>Reveal Ending Block</th>
+            <th>Score</th>
+            <th>Actions</th>
           </tr>
           </thead>
           <tbody>

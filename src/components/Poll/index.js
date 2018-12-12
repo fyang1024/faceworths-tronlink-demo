@@ -22,7 +22,10 @@ const Poll = props => {
     <td>{commitEndingBlock}</td>
     <td>{revealEndingBlock}</td>
     <td><input type="number" value = {score} readOnly={true}/></td>
-    <td><button onClick={ () => onCommit(hash, score)}>Commit</button><button onClick={ () => onReveal(hash, score)}>Reveal</button></td>
+    <td>
+      <button onClick={ () => onCommit(hash, score)}>Commit</button>
+      <button onClick={ () => onReveal(hash, score)}>Reveal</button>
+    </td>
   </tr>);
 };
 
