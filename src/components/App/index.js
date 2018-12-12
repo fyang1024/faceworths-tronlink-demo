@@ -19,8 +19,8 @@ class App extends React.Component {
     myPoll: {
       facePhoto: '',
       faceHash: '',
-      blocksBeforeReveal: 10, // 30 seconds
-      blocksBeforeEnd: 10, // 30 seconds
+      blocksBeforeReveal: 20, // 30 seconds
+      blocksBeforeEnd: 20, // 30 seconds
       loading: false
     },
     recentPolls: [],
@@ -158,17 +158,17 @@ class App extends React.Component {
     this.contract.StageChange().watch(async (err, {result}) => {
       if (err) return console.error('Failed to bind event listener:', err);
       console.log('Detected stage change:', result);
-      if (result.newStage === 4) {
-        let winners = await this.contract.getWinners('0x' + result.hash).call();
-        for(let i=0; i<winners.length; i++) {
-          if (winners[i] === window.tronWeb.defaultAddress.hex) {
-            Swal({
-              title: 'Lucky you win!',
-              type: 'success'
-            })
-          }
-        }
-      }
+      // if (result.newStage === 4) {
+      //   let winners = await this.contract.getWinners('0x' + result.hash).call();
+      //   for(let i=0; i<winners.length; i++) {
+      //     if (winners[i] === window.tronWeb.defaultAddress.hex) {
+      //       Swal({
+      //         title: 'Lucky you win!',
+      //         type: 'success'
+      //       })
+      //     }
+      //   }
+      // }
     });
   }
 
