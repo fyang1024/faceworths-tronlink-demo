@@ -301,7 +301,7 @@
     }
   ]},
   "FaceWorthPollFactory": {
-    "address": "41bf30b6d54f95b76e97e8d897769eda0c07cc6905",
+    "address": "41ca329309576bc88dd0a7fd21a853c892c73ff98e",
     "abi": [
       {
         "constant": true,
@@ -448,15 +448,15 @@
             "type": "bytes32"
           },
           {
-            "name": "startingBlock",
+            "name": "startBlock",
             "type": "uint256"
           },
           {
-            "name": "commitEndingBlock",
+            "name": "commitEndBlock",
             "type": "uint256"
           },
           {
-            "name": "revealEndingBlock",
+            "name": "revealEndBlock",
             "type": "uint256"
           },
           {
@@ -559,20 +559,6 @@
           {
             "name": "",
             "type": "address"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "pollCount",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
           }
         ],
         "payable": false,
@@ -741,17 +727,17 @@
           },
           {
             "indexed": false,
-            "name": "startingBlock",
+            "name": "startBlock",
             "type": "uint256"
           },
           {
             "indexed": false,
-            "name": "commitEndingBlock",
+            "name": "commitEndBlock",
             "type": "uint256"
           },
           {
             "indexed": false,
-            "name": "revealEndingBlock",
+            "name": "revealEndBlock",
             "type": "uint256"
           }
         ],
@@ -1021,9 +1007,28 @@
           }
         ],
         "name": "createFaceWorthPoll",
-        "outputs": [],
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
         "payable": false,
         "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getPollCount",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
         "type": "function"
       },
       {
@@ -1161,6 +1166,20 @@
           }
         ],
         "name": "getRevealTimeElapsed",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getCurrentBlock",
         "outputs": [
           {
             "name": "",
