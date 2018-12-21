@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TronLink test</title>
+</head>
+<body>
+<script type="text/javascript">
+    console.log(window.tronWeb);
+    if (window.tronWeb) console.log(window.tronWeb.ready);
+    setTimeout(()=>{
+    console.log('hello');
+    console.log(window.tronWeb);
+    if (window.tronWeb) console.log(window.tronWeb.ready);}, 500
+    )
+</script>
+</body>
+</html>
